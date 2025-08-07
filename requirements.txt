@@ -1,0 +1,7 @@
+spacy
+geopy
+folium
+groq
+gradio
+reportlab
+requests
