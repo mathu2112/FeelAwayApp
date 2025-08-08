@@ -1,7 +1,7 @@
-spacy
-geopy
-folium
+gradio==3.52.1
 groq
-gradio
 reportlab
-requests
+spacy==3.5.3
+geopy==2.3.0
+folium==0.14.0
+requests==2.31.0
