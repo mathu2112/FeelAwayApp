@@ -14,7 +14,7 @@ import spacy
 from geopy.geocoders import Nominatim
 import folium
 
-# Load API key securely from environment
+# Load API key 
 GR_API_KEY = os.getenv("GR_API_KEY")
 client = Groq(api_key=GR_API_KEY)
 
@@ -40,15 +40,12 @@ MOOD_IMAGES = {
     "Any": "images/default.png"
 }
 
-# Load SpaCy model once globally
 nlp = spacy.load("en_core_web_sm")
 
 def clean_place_name(name):
-    import re
     return re.sub(r'^(the|a|an)\s+', '', name, flags=re.IGNORECASE).strip()
 
 def extract_places_and_map(itinerary_text, city_context=None):
-    # Extract places using regex + NER
     pattern = r"(visit|explore|trip to|at|go to|see)\s+([A-Z][A-Za-zÀ-ÖØ-öø-ÿ'’\- ]+)"
     matches = re.findall(pattern, itinerary_text, re.IGNORECASE)
     rule_places = [m[1].strip() for m in matches]
@@ -72,12 +69,10 @@ def extract_places_and_map(itinerary_text, city_context=None):
     if not locations:
         return "<p>No locations found for mapping.</p>"
 
-    # Create Folium map
     m = folium.Map(location=[locations[0][1], locations[0][2]], zoom_start=10)
     for name, lat, lon in locations:
         folium.Marker([lat, lon], popup=name).add_to(m)
 
-    # Return full HTML (with JS & CSS)
     return m._repr_html_()
 
 def generate_itinerary(mood, location, budget, days):
@@ -106,14 +101,13 @@ def generate_itinerary(mood, location, budget, days):
     itinerary_text = completion.choices[0].message.content
     image_path = os.path.abspath(MOOD_IMAGES.get(mood, MOOD_IMAGES["Any"]))
 
-    # Generate map HTML from itinerary text and user location
     map_html = extract_places_and_map(itinerary_text, city_context=location_text if location_text.lower() != "any destination" else None)
 
     return itinerary_text, image_path, map_html
 
 def generate_pdf(itinerary_text):
     if not itinerary_text.strip():
-        return None,gr.update(visible=False)
+        return None, gr.update(visible=False)
 
     temp_dir = tempfile.gettempdir()
     temp_path = os.path.join(temp_dir, "feelaway_itinerary.pdf")
@@ -142,10 +136,10 @@ def generate_pdf(itinerary_text):
 
     doc.build(story)
 
-    return temp_path,gr.update(visible=True)
-
-
+    return temp_path, gr.update(visible=True)
+# ---------------------- UI ----------------------
 with gr.Blocks(theme=gr.themes.Default(primary_hue="teal", secondary_hue="teal")) as demo:
+    
     header_html = """
     <style>
     @keyframes colorCycle {
@@ -155,57 +149,107 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="teal", secondary_hue="teal")
         75% { color: #008080; }
         100% { color: #20b2aa; }
     }
-    .color-cycle { animation: colorCycle 3s infinite; }
-    .tagline { font-style: italic; color: #007777; font-size: 18px; margin-top: 4px; }
-    #map-container iframe {
-    width: 100% !important;
-    height: 500px !important;
-    border-radius: 8px;
-    overflow:hidden;
+    .color-cycle {
+        animation: colorCycle 3s infinite;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        text-shadow: 1px 1px 3px #a0d1d1;
     }
-    #image-container img {
-        width: 100% !important;
-        height: 500px !important;
-        object-fit: cover;
-        border-radius: 8px;
+    .tagline {
+        font-style: italic;
+        color: #007777 !important;
+        font-size: 20px;
+        margin-top: 4px;
+        height: 30px;
+        white-space: nowrap;
+        overflow: hidden;
+        font-weight: 600;
+        animation: pulseOpacity 2s infinite;
     }
     .equal-row {
         display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        justify-items: center;
+        gap: 16px;
+    }
+    .equal-row > div {
+        flex: 1;
+    }
+    #map-container iframe,
+    #image-container img {
+        width: 100%;
+        height: 500px;
+        border-radius: 8px;
+        object-fit: cover;
+        display: block;
     }
     </style>
-    <div style='text-align: center;'>
-        <h1 class="color-cycle" style="font-size: 38px; margin-bottom: 0;">FEEL AWAY APP</h1>
-        <p class="tagline">"Your Mood, Your Journey – Personalized Itineraries, Instantly"</p>
+    <div style='text-align: center; margin-top: 30px; margin-bottom: 30px;'>
+        <h1 class="color-cycle" style="font-size: 42px; margin: 0;">FEEL AWAY APP</h1>
+        <p class="tagline" id="typing-text-main"></p>
     </div>
+    <script>
+    const tagline = "Your Mood, Your Journey – Personalized Itineraries, Instantly!";
+    function typeWriter(elId) {
+        let i = 0;
+        let forward = true;
+        const el = document.getElementById(elId);
+        function typing() {
+            if (forward) {
+                if (i < tagline.length) {
+                    el.innerHTML += tagline.charAt(i);
+                    i++;
+                } else {
+                    forward = false;
+                    setTimeout(typing, 2000);
+                    return;
+                }
+            } else {
+                if (i > 0) {
+                    el.innerHTML = tagline.substring(0, i-1);
+                    i--;
+                } else {
+                    forward = true;
+                }
+            }
+            setTimeout(typing, 60);
+        }
+        typing();
+    }
+    window.onload = () => {
+        typeWriter("typing-text-main");
+    }
+    </script>
     """
-    with gr.Row():
+
+    with gr.Column(elem_id="main-content"):
         gr.HTML(header_html)
 
-    with gr.Row():
-        mood = gr.Dropdown(MOODS, label="Mood", value="Any", info="Select the mood of your trip")
-        location = gr.Textbox(label="Destination", placeholder="e.g., India, Japan, France (leave blank for Any)", info="Where do you want to go?")
-    
-    with gr.Row():
-        budget = gr.Dropdown(["Low", "Medium", "High", "Any"], label="Budget", value="Any", info="Choose your budget level")
-        days = gr.Slider(1, 10, value=5, step=1, label="Days", info="Number of days for the itinerary")
-    
-    generate_btn = gr.Button("✨ Generate Itinerary", variant="primary")
-
-    with gr.Column():
-        itinerary_output = gr.Markdown(label="Generated Itinerary")
+        with gr.Row():
+            mood = gr.Dropdown(MOODS, label="Mood", value="Any")
+            location = gr.Textbox(label="Destination", placeholder="e.g., India, Japan, France (leave blank for Any)")
         
-        with gr.Row(elem_classes="equal-row"):
-            with gr.Column(scale=1):
-                image_output = gr.Image(label="Travel Mood Image",type="filepath")
-            with gr.Column(scale=1):
-                map_output = gr.HTML(label="Map of Suggested Places",elem_id="map-container")
+        with gr.Row():
+            budget = gr.Dropdown(["Low", "Medium", "High", "Any"], label="Budget", value="Any")
+            days = gr.Slider(1, 10, value=5, step=1, label="Days")
+        
+        generate_btn = gr.Button("Generate Itinerary", variant="primary")
 
-    with gr.Column():
-        download_btn = gr.Button("Download Itinerary as PDF",variant="secondary")
-        pdf_file = gr.File(label="Download PDF", file_types=[".pdf"],visible=False)
+        with gr.Column():
+            itinerary_output = gr.Markdown(label="Generated Itinerary")
+
+            with gr.Row(elem_classes="equal-row"):
+                with gr.Column(scale=1):
+                    gr.HTML("<div id='image-container'>")
+                    image_output = gr.Image(type="filepath", show_label=False)
+                    gr.HTML("</div>")
+                with gr.Column(scale=1):
+                    gr.HTML("<div id='map-container'>")
+                    map_output = gr.HTML(show_label=False)
+                    gr.HTML("</div>")
+
+        with gr.Column():
+            download_btn = gr.Button("Download Itinerary as PDF", variant="secondary")
+            pdf_file = gr.File(file_types=[".pdf"], visible=False)
 
     generate_btn.click(
         generate_itinerary,
@@ -213,6 +257,7 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="teal", secondary_hue="teal")
         outputs=[itinerary_output, image_output, map_output],
         show_progress=True
     )
+
     download_btn.click(
         generate_pdf,
         inputs=[itinerary_output],
