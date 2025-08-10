@@ -1,22 +1,28 @@
-FEEL AWAY- Mood-Based GenAI App
+# Mood-Based Travel Itinerary Generator
 
-A Python-based Generative AI application that generates responses or content based on your mood.  
-Simply run the app, input your mood, and let the AI create something that matches how you feel.
+An AI-powered travel planning application built with Gen AI LLM that creates personalized travel itineraries based on the user's mood, budget, country, and number of days.  
 
----
+The app integrates live maps via the Nominatim library for location visualization, and can export the generated itinerary as a PDF (using ReportLab) on request.
 
-Features
+# Features
 
-  **Mood Input** – Enter your current mood as text.
-  **AI-Generated Output** – Uses advanced language models to respond accordingly.
-  **Image Support** – Includes mood-related images from the `images/` folder.
-  **Simple to Run** – Just install dependencies and execute `app.py`.
+- AI-Powered Itinerary Generation — Generates unique, mood-based travel plans using the Gemma2-9B-IT LLM.
+- Gradio Frontend — Clean and interactive UI for smooth user experience.
+- Live Map Integration — Displays location maps for all suggested destinations using Nominatim.
+- Budget-Friendly Suggestions — Adapts recommendations to your given budget.
+- Custom Trip Duration — Plans are tailored to your preferred number of travel days.
+- PDF Export — Download the itinerary as a PDF using ReportLab.
 
----
+# Tech Stack
 
-Project Structure
+- LLM Model: Gemma2-9B-IT (https://ai.google.dev/gemma)
+- Frontend: Gradio (https://www.gradio.app/)
+- Mapping API: Nominatim (https://nominatim.org/)
+- Backend: Python
+- PDF Generation: ReportLab (https://www.reportlab.com/)
 
-```plaintext
+
+# Project Structure
 ├── app.py             # Main application script
 ├── requirements.txt   # Python dependencies
 ├── images/            # Mood-related image assets
